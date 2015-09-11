@@ -25,8 +25,6 @@ __global__ void kernScan(int n, int powd, int* odata, int* idata){
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
  */
 void scan(int n, int *odata, const int *idata) {
-    // TODO
-
 	// Compute log-rounded n
 	int td = ilog2ceil(n);
 	int n2 = (int)pow(2,td);

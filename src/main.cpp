@@ -16,8 +16,8 @@
 #include "testing_helpers.hpp"
 
 int main(int argc, char* argv[]) {
-    //const int SIZE = 1 << 8;
-	const int SIZE = 1 << 3;
+    const int SIZE = 1 << 8;
+	//const int SIZE = 1 << 3;
     const int NPOT = SIZE - 3;
     int a[SIZE], b[SIZE], c[SIZE];
 
@@ -29,6 +29,7 @@ int main(int argc, char* argv[]) {
     printf("****************\n");
 
     genArray(SIZE - 1, a, 50);  // Leave a 0 at the end to test that edge case
+	a[SIZE - 1] = 0;
     printArray(SIZE, a, true);
 
     zeroArray(SIZE, b);
@@ -86,7 +87,8 @@ int main(int argc, char* argv[]) {
     // Compaction tests
 
     genArray(SIZE - 1, a, 4);  // Leave a 0 at the end to test that edge case
-    printArray(SIZE, a, true);
+	a[SIZE - 1] = 0;
+	printArray(SIZE, a, true);
 
     int count, expectedCount, expectedNPOT;
 
