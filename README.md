@@ -17,32 +17,9 @@ In terms of the GPU implementations, the work-efficient algorithm is in general 
 One thing to note is the Thrust (1) and Thrust (2). I noticed that the first thrust run in a single session took much longer than the second run (1st for a power-of-two and 2nd for a non-power-of-two), I am wondering if it is perhaps caching somewhere.
 
 Sample output:
+
 ![](images/2_15_results.PNG)
 
-* Roughly optimize the block sizes of each of your implementations for minimal
-  run time on your GPU.
-  * (You shouldn't compare unoptimized implementations to each other!)
-
-* Compare all of these GPU Scan implementations (Naive, Work-Efficient, and
-  Thrust) to the serial CPU version of Scan. Plot a graph of the comparison
-  (with array size on the independent axis).
-  * You should use CUDA events for timing. Be sure **not** to include any
-    explicit memory operations in your performance measurements, for
-    comparability.
-  * To guess at what might be happening inside the Thrust implementation, take
-    a look at the Nsight timeline for its execution.
-
-* Write a brief explanation of the phenomena you see here.
-  * Can you find the performance bottlenecks? Is it memory I/O? Computation? Is
-    it different for each implementation?
-
-* Paste the output of the test program into a triple-backtick block in your
-  README.
-  * If you add your own tests (e.g. for radix sort or to test additional corner
-    cases), be sure to mention it explicitly.
-
-These questions should help guide you in performance analysis on future
-assignments, as well.
 
 ## Submit
 
