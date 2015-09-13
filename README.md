@@ -17,7 +17,7 @@ In terms of the GPU implementations, the work-efficient algorithm is in general 
 One thing to note is the Thrust (1) and Thrust (2). I noticed that the first thrust run in a single session took much longer than the second run (1st for a power-of-two and 2nd for a non-power-of-two), I am wondering if it is perhaps caching somewhere.
 
 Sample output:
-![](images/2_15.PNG)
+![](images/2_15_results.PNG)
 
 * Roughly optimize the block sizes of each of your implementations for minimal
   run time on your GPU.
