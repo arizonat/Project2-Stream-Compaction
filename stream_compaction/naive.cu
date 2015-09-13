@@ -35,7 +35,6 @@ void scan(int n, int *odata, const int *idata) {
 	// Scan
 	int* dev_idata;
 	int* dev_odata;
-	int* tmp;
 
 	cudaMalloc((void**)&dev_idata, n2_size);
 	cudaMalloc((void**)&dev_odata, n2_size);
