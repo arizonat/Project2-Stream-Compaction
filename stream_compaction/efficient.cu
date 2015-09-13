@@ -30,24 +30,6 @@ __global__ void downsweep(int n, int powd, int powd1, int* idata){
 	}
 }
 
-__global__ void nonzero(int n, int* odata, const int* idata){
-	int k = threadIdx.x + (blockIdx.x * blockDim.x);
-
-	if (k < n){
-		odata[k] = !!idata[k];
-	}
-}
-
-__global__ void scatter(int n, int* odata, const int* idata, const int* nz, const int* scan){
-	int k = threadIdx.x + (blockIdx.x * blockDim.x);
-
-	if (k < n){
-		if (nz[k] == 1){
-			odata[scan[k]] = idata[k];
-		}
-	}
-}
-
 /**
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
  */

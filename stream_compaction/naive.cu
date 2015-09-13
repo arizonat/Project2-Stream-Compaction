@@ -35,6 +35,7 @@ void scan(int n, int *odata, const int *idata) {
 	// Scan
 	int* dev_idata;
 	int* dev_odata;
+	int* tmp;
 
 	cudaMalloc((void**)&dev_idata, n2_size);
 	cudaMalloc((void**)&dev_odata, n2_size);
@@ -45,20 +46,9 @@ void scan(int n, int *odata, const int *idata) {
 
 	for(int d=1; d<=td; d++){
 		int powd = 1 << (d-1);
-		//cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync);
 		kernScan<<<numBlocks,MAXTHREADS>>>(n2, powd, dev_odata, dev_idata);
-		//cudaDeviceSynchronize();
 		cudaThreadSynchronize();
-
-		//cudaMemcpy(odata,dev_odata,2,cudaMemcpyDeviceToHost);
-		//odata[0] = 0;
-		//cudaMemcpy(odata + 1, dev_odata, n_size - sizeof(int), cudaMemcpyDeviceToHost);
-		//printf("Yeah...\n");
-		//for (int i = 1024; i < n; i++){
-		//	printf("%d ", odata[i]);
-		//}
-		//printf("\n\n");
-		dev_idata = dev_odata;
+		cudaMemcpy(dev_idata, dev_odata, n2_size, cudaMemcpyDeviceToDevice);
 	}
 
 	// Remove leftover (from the log-rounded portion)
