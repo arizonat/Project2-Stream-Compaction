@@ -24,14 +24,7 @@ void scan(int n, int *odata, const int *idata) {
 
 	thrust::host_vector<int> hst_v_out = v_in;
 
-	for (int i=0; i<n; i++){
-		printf("%d ", hst_v_out[i]);
-		odata[i] = hst_v_out[i];
-	}
-	printf("\n");
-
-	//odata = &hst_v_out[0];
-	//odata = thrust::raw_pointer_cast(&hst_v_out[0]);
+	memcpy(odata,hst_v_out.data(),n*sizeof(int));
 }
 
 }

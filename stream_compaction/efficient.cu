@@ -9,7 +9,7 @@ namespace Efficient {
 // TODO: __global__
 
 __global__ void upsweep(int n, int powd, int powd1, int* idata){
-	int k = threadIdx.x;
+	int k = threadIdx.x + (blockIdx.x * blockDim.x);
 
 	if (k < n){
 		if (k % (powd1) == 0){
@@ -19,7 +19,7 @@ __global__ void upsweep(int n, int powd, int powd1, int* idata){
 }
 
 __global__ void downsweep(int n, int powd, int powd1, int* idata){
-	int k = threadIdx.x;
+	int k = threadIdx.x + (blockIdx.x * blockDim.x);
 
 	if (k < n){
 		if (k % (powd1) == 0){
@@ -31,7 +31,7 @@ __global__ void downsweep(int n, int powd, int powd1, int* idata){
 }
 
 __global__ void nonzero(int n, int* odata, const int* idata){
-	int k = threadIdx.x;
+	int k = threadIdx.x + (blockIdx.x * blockDim.x);
 
 	if (k < n){
 		odata[k] = !!idata[k];
@@ -39,7 +39,7 @@ __global__ void nonzero(int n, int* odata, const int* idata){
 }
 
 __global__ void scatter(int n, int* odata, const int* idata, const int* nz, const int* scan){
-	int k = threadIdx.x;
+	int k = threadIdx.x + (blockIdx.x * blockDim.x);
 
 	if (k < n){
 		if (nz[k] == 1){
@@ -56,6 +56,8 @@ void scan(int n, int *odata, const int *idata) {
 	int td = ilog2ceil(n);
 	int n2 = (int)pow(2,td);
 
+	int numBlocks = (n2 - 1) / MAXTHREADS + 1;
+
 	int n_size = n * sizeof(int);
 	int n2_size = n2 * sizeof(int);
 
@@ -71,14 +73,14 @@ void scan(int n, int *odata, const int *idata) {
 	for(int d=0; d<td; d++){
 		powd = (int)pow(2,d);
 		powd1 = (int)pow(2,d+1);
-		upsweep<<<1,n2>>>(n2, powd, powd1, dev_idata);
+		upsweep<<<numBlocks,MAXTHREADS>>>(n2, powd, powd1, dev_idata);
 	}
 
 	cudaMemset((void*)&dev_idata[n2-1],0,sizeof(int));
 	for(int d=td-1; d>=0; d--){
 		powd = (int)pow(2,d);
 		powd1 = (int)pow(2,d+1);
-		downsweep<<<1,n2>>>(n2, powd, powd1, dev_idata);
+		downsweep<<<numBlocks,MAXTHREADS>>>(n2, powd, powd1, dev_idata);
 	}
 
 	// Remove leftover (from the log-rounded portion)
@@ -97,6 +99,7 @@ void scan(int n, int *odata, const int *idata) {
  */
 int compact(int n, int *odata, const int *idata) {
 	int n_size = n*sizeof(int);
+	int numBlocks = (n - 1) / MAXTHREADS + 1;
 	int on = -1;
 
 	// Nonzero
@@ -110,7 +113,8 @@ int compact(int n, int *odata, const int *idata) {
 	cudaMemcpy(dev_idata, idata, n_size, cudaMemcpyHostToDevice);
 
 	//nonzero<<<1,n>>>(n, dev_nz, dev_idata);
-	StreamCompaction::Common::kernMapToBoolean<<<1,n>>>(n, dev_nz, dev_idata);
+	StreamCompaction::Common::kernMapToBoolean<<<numBlocks,MAXTHREADS>>>(n, dev_nz, dev_idata);
+	cudaDeviceSynchronize();
 
 	// TODO: technically only need the last element here
 	cudaMemcpy(hst_nz, dev_nz, n_size, cudaMemcpyDeviceToHost);
@@ -128,7 +132,8 @@ int compact(int n, int *odata, const int *idata) {
 	cudaMemcpy(dev_scan, hst_scan, n_size, cudaMemcpyHostToDevice);
 	
 	//scatter<<<1,n>>>(n, dev_odata, dev_idata, dev_nz, dev_scan);
-	StreamCompaction::Common::kernScatter<<<1,n>>>(n, dev_odata, dev_idata, dev_nz, dev_scan);
+	StreamCompaction::Common::kernScatter<<<numBlocks,MAXTHREADS>>>(n, dev_odata, dev_idata, dev_nz, dev_scan);
+	cudaDeviceSynchronize();
 
 	cudaMemcpy(odata, dev_odata, n_size, cudaMemcpyDeviceToHost);
 
