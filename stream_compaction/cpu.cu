@@ -1,5 +1,7 @@
 #include <cstdio>
 #include "cpu.h"
+#include <ctime>
+#include <cuda.h>
 
 namespace StreamCompaction {
 namespace CPU {
@@ -8,10 +10,23 @@ namespace CPU {
  * CPU scan (prefix sum).
  */
 void scan(int n, int *odata, const int *idata) {
+
+	cudaEvent_t start,stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+
+	cudaEventRecord(start);
+
 	odata[0] = 0;
 	for (int i=1; i<n; i++){
 		odata[i] = odata[i-1] + idata[i-1];
 	}
+
+	cudaEventRecord(stop);
+	cudaEventSynchronize(stop);
+	float ms;
+	cudaEventElapsedTime(&ms, start, stop);
+	printf("cpu scan (s) cuda: %f\n", ms/1000.0);
 }
 
 /**
@@ -20,6 +35,12 @@ void scan(int n, int *odata, const int *idata) {
  * @returns the number of elements remaining after compaction.
  */
 int compactWithoutScan(int n, int *odata, const int *idata) {
+	cudaEvent_t start,stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+
+	cudaEventRecord(start);
+
 	int c = 0;
 	for (int i=0; i<n; i++){
 		if(idata[i] != 0){
@@ -27,6 +48,11 @@ int compactWithoutScan(int n, int *odata, const int *idata) {
 			c++;
 		}
 	}
+	cudaEventRecord(stop);
+	cudaEventSynchronize(stop);
+	float ms;
+	cudaEventElapsedTime(&ms, start, stop);
+	printf("cpu compact w/o scan (s) cuda: %f\n", ms/1000.0);
 
     return c;
 }
@@ -37,6 +63,12 @@ int compactWithoutScan(int n, int *odata, const int *idata) {
  * @returns the number of elements remaining after compaction.
  */
 int compactWithScan(int n, int *odata, const int *idata) {
+
+	cudaEvent_t start,stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+
+	cudaEventRecord(start);
 
 	// Temp
 	int* temp = new int[n];
@@ -62,6 +94,13 @@ int compactWithScan(int n, int *odata, const int *idata) {
 			odata[oind] = idata[i];
 		}
 	}
+
+	cudaEventRecord(stop);
+	cudaEventSynchronize(stop);
+	float ms;
+	cudaEventElapsedTime(&ms, start, stop);
+	printf("cpu compact w/ scan (s) cuda: %f\n", ms/1000.0);
+
     return c;
 }
 

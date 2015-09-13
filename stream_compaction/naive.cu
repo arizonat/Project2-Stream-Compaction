@@ -24,15 +24,14 @@ __global__ void kernScan(int n, int powd, int* odata, int* idata){
  * Performs prefix-sum (aka scan) on idata, storing the result into odata.
  */
 void scan(int n, int *odata, const int *idata) {
-	// Compute log-rounded n
-	
+	// Initialize
 	int td = ilog2ceil(n);
 	int n2 = (int)pow(2,td);
+	int numBlocks = (n2-1) / MAXTHREADS + 1;
 
 	int n_size = n * sizeof(int);
 	int n2_size = n2 * sizeof(int);
 
-	// Scan
 	int* dev_idata;
 	int* dev_odata;
 
@@ -40,15 +39,24 @@ void scan(int n, int *odata, const int *idata) {
 	cudaMalloc((void**)&dev_odata, n2_size);
 	cudaMemcpy(dev_idata, idata, n_size, cudaMemcpyHostToDevice);
 	cudaMemset(dev_idata+n, 0, n2_size-n_size);
-	
-	int numBlocks = (n2-1) / MAXTHREADS + 1;
 
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	
+	// Scan
+	cudaEventRecord(start);
 	for(int d=1; d<=td; d++){
 		int powd = 1 << (d-1);
 		kernScan<<<numBlocks,MAXTHREADS>>>(n2, powd, dev_odata, dev_idata);
 		cudaThreadSynchronize();
 		cudaMemcpy(dev_idata, dev_odata, n2_size, cudaMemcpyDeviceToDevice);
 	}
+	cudaEventRecord(stop);
+	cudaEventSynchronize(stop);
+	float ms = 0;
+	cudaEventElapsedTime(&ms, start, stop);
+	printf("naive time(s): %f\n", ms/1000.0);
 
 	// Remove leftover (from the log-rounded portion)
 	// Do a shift right to make it an exclusive sum

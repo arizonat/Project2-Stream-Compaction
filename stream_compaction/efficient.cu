@@ -46,11 +46,16 @@ void scan(int n, int *odata, const int *idata) {
 	int* hst_idata2 = new int[n2]();
 	memcpy(hst_idata2, idata, n_size);
 
-	// Scan
 	int* dev_idata;
 	cudaMalloc((void**)&dev_idata, n2_size);
 	cudaMemcpy(dev_idata, hst_idata2, n2_size, cudaMemcpyHostToDevice);
 
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	cudaEventRecord(start);
+
+	// Scan
 	int powd, powd1;
 	for(int d=0; d<td; d++){
 		powd = (int)pow(2,d);
@@ -64,6 +69,12 @@ void scan(int n, int *odata, const int *idata) {
 		powd1 = (int)pow(2,d+1);
 		downsweep<<<numBlocks,MAXTHREADS>>>(n2, powd, powd1, dev_idata);
 	}
+
+	cudaEventRecord(stop);
+	cudaEventSynchronize(stop);
+	float ms = 0;
+	cudaEventElapsedTime(&ms, start, stop);
+	printf("efficient scan time (s): %f\n",ms/1000.0);
 
 	// Remove leftover (from the log-rounded portion)
 	// No need to shift in this one I guess?
@@ -84,17 +95,27 @@ int compact(int n, int *odata, const int *idata) {
 	int numBlocks = (n - 1) / MAXTHREADS + 1;
 	int on = -1;
 
-	// Nonzero
+	// Initialize memory
+	int* hst_nz = (int*)malloc(n_size);
+	
 	int* dev_nz;
 	int* dev_idata;
-	int* hst_nz = (int*)malloc(n_size);
-
+	int* dev_scan;
+	int* dev_odata;
+	
 	cudaMalloc((void**)&dev_nz, n_size);
 	cudaMalloc((void**)&dev_idata, n_size);
-	
+	cudaMalloc((void**)&dev_scan, n_size);
+	cudaMalloc((void**)&dev_odata, n_size);
+
+	// Nonzero
 	cudaMemcpy(dev_idata, idata, n_size, cudaMemcpyHostToDevice);
 
-	//nonzero<<<1,n>>>(n, dev_nz, dev_idata);
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	cudaEventRecord(start);
+
 	StreamCompaction::Common::kernMapToBoolean<<<numBlocks,MAXTHREADS>>>(n, dev_nz, dev_idata);
 	cudaDeviceSynchronize();
 
@@ -107,15 +128,15 @@ int compact(int n, int *odata, const int *idata) {
 	on = hst_scan[n-1] + hst_nz[n-1];
 
 	// Scatter
-	int* dev_scan;
-	int* dev_odata;
-	cudaMalloc((void**)&dev_scan, n_size);
-	cudaMalloc((void**)&dev_odata, n_size);
 	cudaMemcpy(dev_scan, hst_scan, n_size, cudaMemcpyHostToDevice);
-	
-	//scatter<<<1,n>>>(n, dev_odata, dev_idata, dev_nz, dev_scan);
 	StreamCompaction::Common::kernScatter<<<numBlocks,MAXTHREADS>>>(n, dev_odata, dev_idata, dev_nz, dev_scan);
 	cudaDeviceSynchronize();
+
+	cudaEventRecord(stop);
+	cudaEventSynchronize(stop);
+	float ms = 0;
+	cudaEventElapsedTime(&ms, start, stop);
+	printf("efficient compact time (s): %f\n",ms/1000.0);
 
 	cudaMemcpy(odata, dev_odata, n_size, cudaMemcpyDeviceToHost);
 
