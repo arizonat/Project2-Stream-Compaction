@@ -14,24 +14,18 @@ Above you can see the comparison between the run-times of all the different algo
 
 In terms of the GPU implementations, the work-efficient algorithm is in general an order of magnitude faster than the naive version. This is most likely because of the necessary overhead of the sequential nature and increased number of operations of the algorithm in addition to the extra cudaMemcpy call in each iteration at each depth in my implementation. 
 
-One thing to note is the Thrust (1) and Thrust (2). I noticed that the first thrust run in a single session took much longer than the second run (1st for a power-of-two and 2nd for a non-power-of-two), I am wondering if it is perhaps caching somewhere.
+One thing to note is the Thrust (1) and Thrust (2). I noticed that the first thrust run in a single session took much longer than the second run (1st for a power-of-two and 2nd for a non-power-of-two), I am wondering if it is perhaps caching somewhere. It is clear that it is doing some kind of memory allocation from the timeline (session only contained a run from thrust):
 
-Sample output:
+![](images/timeline.PNG)
+
+Overall sample output:
 
 ![](images/2_15_results.PNG)
 
+## Radix Sort
 
-## Submit
+Sample radix output with tests:
 
-If you have modified any of the `CMakeLists.txt` files at all (aside from the
-list of `SOURCE_FILES`), you must test that your project can build in Moore
-100B/C. Beware of any build issues discussed on the Google Group.
+![](images/radix.PNG)
 
-1. Open a GitHub pull request so that we can see that you have finished.
-   The title should be "Submission: YOUR NAME".
-2. Send an email to the TA (gmail: kainino1+cis565@) with:
-   * **Subject**: in the form of `[CIS565] Project 2: PENNKEY`
-   * Direct link to your pull request on GitHub
-   * In the form of a grade (0-100+) with comments, evaluate your own
-     performance on the project.
-   * Feedback on the project itself, if any.
+In terms of performance of the radix sort, it seems to be consistently ~0.05s regardless of the size of the array. I'm not sure why this is the case, as I do have several memcpy's in the implementation which I would expect to slow it down dramatically as the size of the array increases. Though perhaps this is an issue with cudaTiming on CPU malloc's vs. cudaMallocs, as there are few cudaMalloc's in my implementation.
