@@ -74,7 +74,7 @@ void scan(int n, int *odata, const int *idata) {
 	cudaEventSynchronize(stop);
 	float ms = 0;
 	cudaEventElapsedTime(&ms, start, stop);
-	printf("efficient scan time (s): %f\n",ms/1000.0);
+	//printf("efficient scan time (s): %f\n",ms/1000.0);
 
 	// Remove leftover (from the log-rounded portion)
 	// No need to shift in this one I guess?

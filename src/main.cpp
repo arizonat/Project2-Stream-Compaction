@@ -13,16 +13,16 @@
 #include <stream_compaction/naive.h>
 #include <stream_compaction/efficient.h>
 #include <stream_compaction/thrust.h>
+#include <stream_compaction/radix.h>
 #include "testing_helpers.hpp"
 
 int main(int argc, char* argv[]) {
-    const int SIZE = 1 << 16;
+    const int SIZE = 1 << 11;
 	//const int SIZE = 1 << 3;
     const int NPOT = SIZE - 3;
     int a[SIZE], b[SIZE], c[SIZE];
 
     // Scan tests
-
     printf("\n");
     printf("****************\n");
     printf("** SCAN TESTS **\n");
@@ -30,7 +30,19 @@ int main(int argc, char* argv[]) {
 
     genArray(SIZE - 1, a, 50);  // Leave a 0 at the end to test that edge case
     a[SIZE - 1] = 0;
-    printArray(SIZE, a, true);
+    //printArray(SIZE, a, true);
+
+	printDesc("Radix sort");
+	StreamCompaction::Radix::sort(SIZE, b, a);
+	printArray(SIZE, a, true);
+	printArray(SIZE, b, true);
+
+	printDesc("Radix sort mini test");
+	int x[8] = {4, 3, 2, 7, 6, 22, 38, 0};
+	int y[8];
+	StreamCompaction::Radix::sort(8, y, x);
+	printArray(8, x, true);
+	printArray(8, y, true);
 
     zeroArray(SIZE, b);
     printDesc("cpu scan, power-of-two");
@@ -85,7 +97,6 @@ int main(int argc, char* argv[]) {
     printf("*****************************\n");
 
     // Compaction tests
-
     genArray(SIZE - 1, a, 4);  // Leave a 0 at the end to test that edge case
     a[SIZE - 1] = 0;
     printArray(SIZE, a, true);
